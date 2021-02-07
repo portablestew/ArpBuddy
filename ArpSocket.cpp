@@ -51,7 +51,7 @@ ArpSocket::ArpSocket(const char *ifaceName)
         return;
     }
 
-    // Locate the interface index
+    // Locate some interface properties
     ifreq ifaceIfr = {0};
     std::strncpy(ifaceIfr.ifr_name, ifaceName, IF_NAMESIZE);
     if (ioctl(m_sock, SIOCGIFINDEX, &ifaceIfr) != 0 || ifaceIfr.ifr_ifindex < 0)
@@ -60,6 +60,13 @@ ArpSocket::ArpSocket(const char *ifaceName)
         return;
     }
     m_ifaceIdx = ifaceIfr.ifr_ifindex;
+
+    if (ioctl(m_sock, SIOCGIFHWADDR, &ifaceIfr) != 0)
+    {
+        std::cerr << "[ERROR] ArpSocket failure: could not get iface hwaddr" << std::endl;
+        return;
+    }
+    std::memcpy(m_ifaceHwAddr, ifaceIfr.ifr_addr.sa_data, ETH_ALEN);
 
     // Set the interface to promiscuous
     if (!SetPacketOption(PACKET_MR_PROMISC, PACKET_ADD_MEMBERSHIP))
@@ -132,6 +139,12 @@ const ArpSocket::ArpPacket *ArpSocket::RecvNext(unsigned char buf[ArpBufferSize]
     }
 
     return arp;
+}
+
+bool ArpSocket::IsLocalInterfaceInvolved(const ArpPacket &packet) const
+{
+    return std::memcmp(m_ifaceHwAddr, packet.m_srcHardwareAddr, ETH_ALEN) == 0 ||
+           std::memcmp(m_ifaceHwAddr, packet.m_dstHardwareAddr, ETH_ALEN) == 0;
 }
 
 bool ArpSocket::SpoofResponse(const ArpPacket &packet)

@@ -23,6 +23,12 @@ bool ArpBuddy::Update()
     unsigned char buf[ArpSocket::ArpBufferSize];
     if (const ArpSocket::ArpPacket *packet = m_sock.RecvNext(buf))
     {
+        // Filter out packets to/from this local host
+        if (m_sock.IsLocalInterfaceInvolved(*packet))
+        {
+            return true;
+        }
+
         switch (static_cast<ArpSocket::Operation>(packet->m_operation))
         {
         case ArpSocket::Operation::Request:
@@ -32,9 +38,11 @@ bool ArpBuddy::Update()
         case ArpSocket::Operation::Response:
             break;
         }
+
+        return true;
     }
 
-    return true;
+    return false;
 }
 
 void ArpBuddy::HandleRequest(const ArpSocket::ArpPacket &req)
