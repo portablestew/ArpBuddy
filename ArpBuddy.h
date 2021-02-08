@@ -15,8 +15,8 @@ public:
     struct Config
     {
         const char *ifaceName = nullptr; // Ethernet interface
-        int verbosity = 0; // Log verbosity, larger is more verbose
-        int numActionableRepeats = 3; // How many repeated requests before stepping in
+        int verbosity = 0;               // Log verbosity, larger is more verbose
+        int numActionableRepeats = 3;    // How many repeated requests before stepping in
     };
 
     ArpBuddy(const Config &config);
@@ -28,6 +28,28 @@ public:
     bool Update();
 
 private:
+    struct ProtoAddrWrapper
+    {
+        ProtoAddrWrapper();
+        explicit ProtoAddrWrapper(const std::uint8_t addr[4]);
+
+        bool IsValid() const;
+
+        bool operator<(const ProtoAddrWrapper &rhs) const;
+
+        std::uint8_t m_addr[4];
+    };
+
+    struct HardwareAddrWrapper
+    {
+        HardwareAddrWrapper();
+        explicit HardwareAddrWrapper(const std::uint8_t addr[6]);
+
+        bool IsValid() const;
+
+        std::uint8_t m_addr[6];
+    };
+
     struct RequestKey
     {
         RequestKey(const std::uint8_t srcHw[6], const std::uint8_t dstProto[4]);
@@ -42,6 +64,9 @@ private:
     void HandleRequest(const ArpSocket::ArpPacket &req);
     bool ResolveRequest(const ArpSocket::ArpPacket &req, ArpSocket::ArpPacket *outResp);
 
+    void CacheSnoopedAddresses(const ArpSocket::ArpPacket &packet);
+    void CacheSnoopedAddress(const std::uint8_t hardwareAddr[6], const std::uint8_t protoAddr[4]);
+
 private:
     std::string m_ifaceName;
     int m_verbosity;
@@ -51,4 +76,7 @@ private:
 
     using RequestCountMap = std::map<RequestKey, int>;
     RequestCountMap m_requests;
+
+    using ProtoAddrMap = std::map<ProtoAddrWrapper, HardwareAddrWrapper>;
+    ProtoAddrMap m_cachedAddrs;
 };

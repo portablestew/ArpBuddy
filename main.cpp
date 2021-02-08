@@ -21,7 +21,7 @@ int main(int argc, char **argv)
     ArpBuddy buddy(config);
     if (!buddy.IsValid())
     {
-        std::cerr << "ArpBuddy init error, aborting." << std::endl;
+        std::cerr << "ArpBuddy init error, aborting. Was it run as root?" << std::endl;
         return 1;
     }
 
