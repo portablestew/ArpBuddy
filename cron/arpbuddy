@@ -1,7 +1,0 @@
-#!/bin/sh
-#
-# Stub to be installed in /etc/cron.daily
-#
-INTERFACE="eth1"
-/usr/local/sbin/arpbuddy "$INTERFACE" >/var/log/arpbuddy.log 2>&1
-exit 0

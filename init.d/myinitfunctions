@@ -1,0 +1,108 @@
+#!/bin/sh
+
+# get_pid_path (name)
+get_pid_path()
+{
+	echo "/var/run/$1.pid"
+}
+
+# check_pid (name)
+check_pid()
+{
+	local name="$1"
+	local pid_path=$(get_pid_path "$name")
+	local pid=$(cat "$pid_path" 2>/dev/null)
+	[ -n "$pid" ] && ps -p "$pid" >/dev/null && return 0
+	return 1
+}
+
+# start_daemon (name, user, daemon, args...)
+start_daemon()
+{
+	local name="$1"
+	local pid_path=$(get_pid_path "$name")
+	local user="$2"
+	local daemon="$3"
+	shift 3
+#	start-stop-daemon -v -S -b -m -p "$pid_path" -c "$user" -x "$daemon" -- "$@"
+	start-stop-daemon -v -S -m -p "$pid_path" -c "$user" -x "$daemon" -- "$@" >"/var/log/daemon_$name.log" 2>&1 &
+#	nohup "$daemon" "$@" >"/var/log/daemon_$name.log" 2>&1 &
+#	echo "$!" >"$pid_path"
+}
+
+# stop_daemon (name)
+stop_daemon()
+{
+	local name="$1"
+        local pid_path=$(get_pid_path "$name")
+        local pid=$(cat "$pid_path" 2>/dev/null)
+
+	child_pids="$(pgrep -P $pid)"
+	start-stop-daemon -v -K -p "$pid_path"
+#	kill -s 3 "$pid"
+	wait $pid
+	[ ! -z "$child_pids" ] && kill -9 $child_pids
+}
+
+# run_script (operation)
+run_script()
+{
+	local name="$NAME"
+	local pid_path=$(get_pid_path "$name")
+	case "$1" in
+		start)
+			if check_pid "$name" ; then
+				echo "Already running."
+				exit 1
+			fi
+
+			if (type start | grep function) >/dev/null ; then
+				start
+				if [ "$?" ] && check_pid "$name" ; then
+					echo "$!" >"$pid_path"
+				else
+					echo "Failed to start."
+					exit 1
+				fi
+			else
+				start_daemon "$NAME" "$USER" "$DAEMON" "${ARGS[@]}"
+				if [ ! "$?" ] ; then
+					echo "Failed to start."
+					exit 1
+				fi
+			fi
+		;;
+
+		stop)
+			if ! $(check_pid "$name") ; then
+				echo "Wasn't running."
+				exit 1
+			fi
+
+			if (type stop | grep function) >/dev/null ; then
+				stop $(cat "$pid_path")
+			else
+				stop_daemon "$name"
+			fi
+		;;
+
+		status)
+			if (type status | grep function) >/dev/null ; then
+				status
+			else
+				(check_pid "$name" && echo "Running" $(cat "$pid_path")) || echo "Not started."
+			fi
+		;;
+
+		restart)
+			stop
+			start
+		;;
+
+		*)
+			echo "Usage: {start|stop|status|restart}"
+			exit 1
+		;;
+	esac
+	exit $?
+}

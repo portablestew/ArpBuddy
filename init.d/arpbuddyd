@@ -1,0 +1,18 @@
+#!/bin/bash
+#
+# TODO: chkconfig
+#
+
+. /usr/local/sbin/myinitfunctions
+
+NAME="arpbuddy"
+USER="root"
+DAEMON="/usr/local/sbin/arpbuddy"
+ARGS=( "eth1" )
+
+start()
+{
+	start_daemon "$NAME" "$USER" "$DAEMON" "${ARGS[@]}"
+}
+
+run_script "$@"

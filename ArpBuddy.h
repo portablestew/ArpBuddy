@@ -16,7 +16,7 @@ public:
     {
         const char *ifaceName = nullptr; // Ethernet interface
         int verbosity = 0;               // Log verbosity, larger is more verbose
-        int numActionableRepeats = 3;    // How many repeated requests before stepping in
+        int numActionableRepeats = 2;    // How many repeated requests before stepping in
     };
 
     ArpBuddy(const Config &config);

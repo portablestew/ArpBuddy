@@ -56,7 +56,7 @@ ArpSocket::ArpSocket(const char *ifaceName)
     std::strncpy(ifaceIfr.ifr_name, ifaceName, IF_NAMESIZE);
     if (ioctl(m_sock, SIOCGIFINDEX, &ifaceIfr) != 0 || ifaceIfr.ifr_ifindex < 0)
     {
-        std::cerr << "[ERROR] ArpSocket failure: could not get iface index" << std::endl;
+        std::cerr << "[ERROR] ArpSocket failure: could not get iface index for " << ifaceName << std::endl;
         return;
     }
     m_ifaceIdx = ifaceIfr.ifr_ifindex;

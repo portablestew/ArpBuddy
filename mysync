@@ -1,0 +1,21 @@
+#!/bin/bash
+#
+# Install on the target host
+set -e
+
+TARGET="gateway@gateway"
+
+INSTALL_CMD=$(cat << EOF
+    echo "Installing $HOSTNAME -> \$HOSTNAME ..."
+    sudo cp arpbuddy/arpbuddy /usr/local/sbin/arpbuddy
+    sudo chmod +x /usr/local/sbin/arpbuddy
+    sudo cp arpbuddy/init.d/myinitfunctions /usr/local/sbin/myinitfunctions
+    sudo cp arpbuddy/init.d/arpbuddyd /etc/init.d/arpbuddyd
+    sudo update-rc.d arpbuddyd defaults
+    echo "Finished."
+EOF
+)
+
+rsync -vtp "build/arpbuddy" "$TARGET:arpbuddy/"
+rsync -rvtp "init.d/" "$TARGET:arpbuddy/init.d/"
+ssh -t "$TARGET" "$INSTALL_CMD"
